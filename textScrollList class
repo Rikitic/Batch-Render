@@ -1,0 +1,131 @@
+#A class is used here with the reason that the pop-up menu updates directly (maya files are loaded in)
+
+class MayaSceneListTextBox(object):
+#intialize class
+    def __init__(self):
+        self.list = cmds.textScrollList(w = 75, allowMultiSelection = False, h = 150, en = True)
+        self.contents = []
+        self.temp_contents = [] 			#This list is mostly used as a stand-in for self.contents
+        self.latestItem = 0 					#initialize integer; this integer is used for when no item is selected in the pop-up list
+        self.temp_latestItem = self.latestItem 		#initialize stand-in integer
+        self.fullPathMayaScene = [] 		#used to let the filePath follow along with the naming convention
+        self.refresh ()
+
+# add a Maya file to the pop-up list
+    def add(self, item):
+				#initialize local list
+        temp_contents = []
+        temp_contents.append (item)			 #add the newly selected file(s) to the local list
+				
+				#A for-loop is used here because if a file is added as a seperate list; when more files are added they are also put in one list;
+				#This way self.contents is made out of one list that only contains maya files and no extra list underneath
+        for i in range (0, (len (temp_contents[0])), 1):
+            self.contents.append(temp_contents[0][i])			 #add the newly added maya file(s) to the global list of the class
+        self.refresh()
+  
+#duplicate a maya	file in the pop-up list
+    def duplicateItem (self):
+        #UI neatness
+        item = cmds.textScrollList ( self.list ,q =True,sii = True) 		#get the position in the list
+        if item != None: 						#if one is selected, give the latest selected position to the global integer of the class
+            self.latestItem = item
+        else: 											#if none is selected, give the latest selected position to the local integer
+            item = self.latestItem
+						
+        index = listIndexfind (item) 							#the position is written as 's1', this makes it possible to lose the 's' and return the '1'
+        duplicate_item = self.contents [index-1] 	#make aduplicate of the file
+        self.contents.append(duplicate_item)		  #add the duplicate to the list
+        
+        #FilePath
+        duplicateSelFP (index-1) 			#makes the filePath do the same
+        
+        self.refresh()
+
+#delete a maya	file in the pop-up list
+    def remove(self):
+        #UI neatness
+        item = cmds.textScrollList ( self.list ,q =True,sii =True) 	#get the position in the list
+        if item != None: 						#if one is selected, give the latest selected position to the global integer of the class
+            self.latestItem = item
+        else: 											#if none is selected, give the latest selected position to the local integer
+            item = self.latestItem
+        index = listIndexfind (item) 							#the position is written as 's1', this makes it possible to lose the 's' and return the '1'
+        remove_item = self.contents [index-1]
+        self.contents.remove(remove_item)					#remove a maya file from the list
+        
+        #FilePath
+        removeSelFP (index-1)				#makes the filePath do the same
+        
+        self.refresh()
+           
+#rename a maya file in the pop-up list
+    def renameItem(self, itemName):
+        item = cmds.textScrollList ( self.list ,q =True,sii =True)	 #get the position in the list
+        if item != None: 						#if one is selected, give the latest selected position to the global integer of the class
+            self.latestItem = item
+        else: 											#if none is selected, give the latest selected position to the local integer
+            item = self.latestItem
+        index = listIndexfind (item) 							#the position is written as 's1', this makes it possible to lose the 's' and return the '1'
+        temp_itemName = string.replace(itemName, " ", "_") 		#spaces are replaced by "_"
+        self.contents [index-1] = temp_itemName			#rename the original file by the new name
+        self.refresh()
+        
+#Moving the maya file up
+    def moveUp (self):
+        #UI neatness
+        item = cmds.textScrollList ( self.list ,q =True,sii =True)  		#get the position in the list
+        if item != None: 						#if one is selected, give the latest selected position to the global integer of the class
+            self.latestItem = item
+        else: 											#if none is selected, give the latest selected position to the local integer
+            item = self.latestItem
+        temp_index = listIndexfind (item) 							#the position is written as 's1', this makes it possible to lose the 's' and return the '1'
+        index = temp_index - self.temp_latestItem				#previous position
+        moveUp_item = self.contents [index-1]						#change it in the pop-up window
+        
+        #FilePath
+        moveUpSelFP (index-1, 0)				#makes the filePath do the same
+        
+        if moveUp_item > 0:
+            #UI neatness
+            temp_item = self.contents [index-2]
+            self.contents [index-2] = self.contents [index-1]
+            self.contents [index-1] = temp_item
+        
+        self.temp_latestItem += 1
+        self.refresh ()
+        
+#Moving the maya file down
+    def moveDown (self):
+        #UI neatness
+        contentsAmount = cmds.textScrollList ( self.list ,q =True,ni =True)  		#get the position in the list
+        item = cmds.textScrollList ( self.list ,q =True,sii =True)
+        if item != None: 						#if one is selected, give the latest selected position to the global integer of the class
+            self.latestItem = item
+        else: 											#if none is selected, give the latest selected position to the local integer
+            item = self.latestItem
+        temp_index = listIndexfind (item) 							#the position is written as 's1', this makes it possible to lose the 's' and return the '1'
+        index = temp_index + self.temp_latestItem				#next position
+        moveDown_item = self.contents [index-1]					#change it in the pop-up window
+        
+        #FilePath
+        moveDownSelFP (index-1, contentsAmount)				#makes the filePath do the same
+        
+        if index < contentsAmount:
+            #UI neatness
+            temp_item = self.contents [index]
+            self.contents [index] = self.contents [index-1]
+            self.contents [index-1] = temp_item
+        
+        self.temp_latestItem += 1
+        self.refresh ()        
+    
+#Calling for the names that are visible in the pop-up window
+    def setMayaSceneNameList (self):
+        item = self.contents
+        return item					#return the list with names
+
+#Refreshing the pop-up window 
+    def refresh (self):
+        cmds.textScrollList(self.list, e=True, ra = True)
+        for item in self.contents:
+            cmds.textScrollList(self.list, e=True, a = item)
