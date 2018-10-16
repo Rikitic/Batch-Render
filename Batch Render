@@ -1,0 +1,39 @@
+#First script sending to second script
+#Call the second script and Render in mayapy.exe
+
+def massAddRenderLayer(filePaths, fileNames, function):
+    # mayaPath is the filePath of the maya application without ui
+    mayaPath = 'C:/Program Files/Autodesk/Maya2018/bin/mayapy.exe'
+    
+    # scriptPath is the filePath of the 2nd script that has to be called
+    scriptPath = 'C:\Autodesk\Scripting2018_Final_2DAE09_Vanthuyne_Rik\Scripts\Scripting2018_Final_2DAE09_Vanthuyne_Rik_Script_02.py'
+    
+    for i in range (0, len(filePaths), 1):
+        #subprocess,Popen is the command that allows python to open the batch render mode maya and the second script
+        #opens maya, opens the second script, gives the following values the filePath and the name given to it
+        #"stdout=subprocess.PIPE,stderr=subprocess.PIPE" This is just part of the code
+        maya = subprocess.Popen(mayaPath+' '+scriptPath+' '+filePaths[i]+' '+fileNames[i],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        
+        out,err = maya.communicate()
+        exitcode = maya.returncode
+        
+        #if an error occurs so it shows up in the output
+        if str(exitcode) != '0':
+            print(err)
+            print 'error opening file: %s' % (filePaths[i])
+        else:
+            print 'added new layer %s to %s' % (out,filePaths[i])
+            
+            
+#Second script receiving the values
+import os
+import maya.standalone
+maya.standalone.initialize ()     #This makes it possible to run maya in batch render mode
+import sys                        #This is necessary for receiving the given values
+import maya.cmds as cmds
+import string
+import pymel.core as pm           #Arnold only initialize if pymel.core is imported
+
+filePath = sys.argv [1]
+fileName = sys.argv [2]
+            
